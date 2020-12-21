@@ -217,28 +217,22 @@ func (j *joiner) IterateChunkAddresses(fn swarm.AddressIterFunc) error {
 		return err
 	}
 
-	eg, _ := errgroup.WithContext(j.ctx)
-	j.processChunkAddresses(fn, j.rootData, j.span, eg)
-
-	return eg.Wait()
+	return j.processChunkAddresses(j.ctx, fn, j.rootData, j.span)
 }
 
-func (j *joiner) processChunkAddresses(fn swarm.AddressIterFunc, data []byte, subTrieSize int64, eg *errgroup.Group) {
+func (j *joiner) processChunkAddresses(ctx context.Context, fn swarm.AddressIterFunc, data []byte, subTrieSize int64) error {
 	// we are at a leaf data chunk
 	if subTrieSize <= int64(len(data)) {
-		return
+		return nil
 	}
 
 	select {
-	case <-j.ctx.Done():
-		if err := j.ctx.Err(); err != nil {
-			eg.Go(func() error {
-				return err
-			})
-		}
-		return
+	case <-ctx.Done():
+		return ctx.Err()
 	default:
 	}
+
+	eg, _ := errgroup.WithContext(ctx)
 
 	for cursor := 0; cursor < len(data); cursor += j.refLength {
 
@@ -255,18 +249,20 @@ func (j *joiner) processChunkAddresses(fn swarm.AddressIterFunc, data []byte, su
 
 		func(address swarm.Address, eg *errgroup.Group) {
 			eg.Go(func() error {
-				ch, err := j.getter.Get(j.ctx, storage.ModeGetRequest, address)
+				ch, err := j.getter.Get(ctx, storage.ModeGetRequest, address)
 				if err != nil {
 					return err
 				}
 
 				chunkData := ch.Data()[8:]
 				subtrieSpan := int64(chunkToSpan(ch.Data()))
-				j.processChunkAddresses(fn, chunkData, subtrieSpan, eg)
-				return nil
+
+				return j.processChunkAddresses(ctx, fn, chunkData, subtrieSpan)
 			})
 		}(address, eg)
 	}
+
+	return eg.Wait()
 }
 
 func (j *joiner) Size() int64 {
