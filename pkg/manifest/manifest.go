@@ -41,9 +41,9 @@ type Interface interface {
 	HasPrefix(context.Context, string) (bool, error)
 	// Store stores the manifest, returning the resulting address.
 	Store(context.Context) (swarm.Address, error)
-	// IterateAddresses is used to iterate over chunks addresses for
+	// EachAddressAsync is used to iterate over chunks addresses from
 	// the manifest.
-	IterateAddresses(context.Context, swarm.AddressIterFunc) error
+	EachAddressAsync(context.Context, swarm.AddressIterFunc) error
 }
 
 // Entry represents a single manifest entry.

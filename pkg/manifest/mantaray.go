@@ -125,32 +125,27 @@ func (m *mantarayManifest) Store(ctx context.Context) (swarm.Address, error) {
 	return address, nil
 }
 
-func (m *mantarayManifest) IterateAddresses(ctx context.Context, fn swarm.AddressIterFunc) error {
+func (m *mantarayManifest) EachAddressAsync(ctx context.Context, fn swarm.AddressIterFunc) error {
 	reference := swarm.NewAddress(m.trie.Reference())
 
 	if swarm.ZeroAddress.Equal(reference) {
 		return ErrMissingReference
 	}
 
-	walker := func(path []byte, node *mantaray.Node, err error) error {
-		if err != nil {
-			return err
-		}
-
+	walker := func(path []byte, node *mantaray.Node) error {
 		if node != nil {
 			if node.Reference() != nil {
 				ref := swarm.NewAddress(node.Reference())
 
-				err = fn(ref)
-				if err != nil {
+				if err := fn(ref); err != nil {
 					return err
 				}
 			}
 
 			if node.IsValueType() && node.Entry() != nil {
 				entry := swarm.NewAddress(node.Entry())
-				err = fn(entry)
-				if err != nil {
+
+				if err := fn(entry); err != nil {
 					return err
 				}
 			}
@@ -159,7 +154,7 @@ func (m *mantarayManifest) IterateAddresses(ctx context.Context, fn swarm.Addres
 		return nil
 	}
 
-	err := m.trie.WalkNode(ctx, []byte{}, m.ls, walker)
+	err := m.trie.EachNodeAsync(ctx, []byte{}, m.ls, walker)
 	if err != nil {
 		return fmt.Errorf("manifest iterate addresses: %w", err)
 	}

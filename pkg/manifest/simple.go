@@ -102,7 +102,7 @@ func (m *simpleManifest) Store(ctx context.Context) (swarm.Address, error) {
 	return m.reference, nil
 }
 
-func (m *simpleManifest) IterateAddresses(ctx context.Context, fn swarm.AddressIterFunc) error {
+func (m *simpleManifest) EachAddressAsync(ctx context.Context, fn swarm.AddressIterFunc) error {
 	if swarm.ZeroAddress.Equal(m.reference) {
 		return ErrMissingReference
 	}
@@ -113,11 +113,7 @@ func (m *simpleManifest) IterateAddresses(ctx context.Context, fn swarm.AddressI
 		return fmt.Errorf("manifest iterate addresses: %w", err)
 	}
 
-	walker := func(path string, entry simple.Entry, err error) error {
-		if err != nil {
-			return err
-		}
-
+	walker := func(path string, entry simple.Entry) error {
 		ref, err := swarm.ParseHexAddress(entry.Reference())
 		if err != nil {
 			return err
@@ -126,7 +122,7 @@ func (m *simpleManifest) IterateAddresses(ctx context.Context, fn swarm.AddressI
 		return fn(ref)
 	}
 
-	err = m.manifest.WalkEntry("", walker)
+	err = m.manifest.EachEntryAsync(ctx, "", walker)
 	if err != nil {
 		return fmt.Errorf("manifest iterate addresses: %w", err)
 	}

@@ -82,7 +82,7 @@ func (s *traversalService) TraverseAddresses(
 		if isManifest {
 			// process as manifest
 
-			err = m.IterateAddresses(ctx, func(manifestNodeAddr swarm.Address) error {
+			err = m.EachAddressAsync(ctx, func(manifestNodeAddr swarm.Address) error {
 				return s.traverseChunkAddressesFromManifest(ctx, manifestNodeAddr, chunkAddressFunc)
 			})
 			if err != nil {
@@ -170,7 +170,7 @@ func (s *traversalService) TraverseManifestAddresses(
 		return ErrInvalidType
 	}
 
-	err = m.IterateAddresses(ctx, func(manifestNodeAddr swarm.Address) error {
+	err = m.EachAddressAsync(ctx, func(manifestNodeAddr swarm.Address) error {
 		return s.traverseChunkAddressesFromManifest(ctx, manifestNodeAddr, chunkAddressFunc)
 	})
 	if err != nil {
