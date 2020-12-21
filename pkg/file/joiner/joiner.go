@@ -247,19 +247,17 @@ func (j *joiner) processChunkAddresses(ctx context.Context, fn swarm.AddressIter
 			continue
 		}
 
-		func(address swarm.Address, eg *errgroup.Group) {
-			eg.Go(func() error {
-				ch, err := j.getter.Get(ectx, storage.ModeGetRequest, address)
-				if err != nil {
-					return err
-				}
+		eg.Go(func() error {
+			ch, err := j.getter.Get(ectx, storage.ModeGetRequest, address)
+			if err != nil {
+				return err
+			}
 
-				chunkData := ch.Data()[8:]
-				subtrieSpan := int64(chunkToSpan(ch.Data()))
+			chunkData := ch.Data()[8:]
+			subtrieSpan := int64(chunkToSpan(ch.Data()))
 
-				return j.processChunkAddresses(ectx, fn, chunkData, subtrieSpan)
-			})
-		}(address, eg)
+			return j.processChunkAddresses(ectx, fn, chunkData, subtrieSpan)
+		})
 	}
 
 	return eg.Wait()
