@@ -229,6 +229,17 @@ func (j *joiner) processChunkAddresses(fn swarm.AddressIterFunc, data []byte, su
 		return
 	}
 
+	select {
+	case <-j.ctx.Done():
+		if err := j.ctx.Err(); err != nil {
+			eg.Go(func() error {
+				return err
+			})
+		}
+		return
+	default:
+	}
+
 	for cursor := 0; cursor < len(data); cursor += j.refLength {
 
 		address := swarm.NewAddress(data[cursor : cursor+j.refLength])
