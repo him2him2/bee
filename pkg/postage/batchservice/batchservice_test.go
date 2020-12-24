@@ -2,9 +2,7 @@ package batchservice_test
 
 import (
 	"bytes"
-	crand "crypto/rand"
 	"errors"
-	"io"
 	"io/ioutil"
 	"math/big"
 	"testing"
@@ -29,7 +27,7 @@ func TestNewBatchService(t *testing.T) {
 	})
 
 	t.Run("passes", func(t *testing.T) {
-		testChainState := postagetesting.NewChainState()
+		testChainState := postagetesting.MustNewChainState()
 		store := mock.New(
 			mock.WithChainState(testChainState),
 		)
@@ -41,7 +39,7 @@ func TestNewBatchService(t *testing.T) {
 }
 
 func TestBatchServiceCreate(t *testing.T) {
-	testBatch := newTestBatch(t)
+	testBatch := postagetesting.MustNewBatch()
 
 	t.Run("expect error", func(t *testing.T) {
 		store := mock.New()
@@ -74,7 +72,7 @@ func TestBatchServiceCreate(t *testing.T) {
 }
 
 func TestBatchServiceTopUp(t *testing.T) {
-	tBatch := newTestBatch(t)
+	tBatch := postagetesting.MustNewBatch()
 	tTopUpAmount := big.NewInt(10000000000000)
 
 	t.Run("expect get error", func(t *testing.T) {
@@ -126,7 +124,7 @@ func TestBatchServiceTopUp(t *testing.T) {
 
 func TestBatchServiceUpdateDepth(t *testing.T) {
 	const tNewDepth = 30
-	tBatch := newTestBatch(t)
+	tBatch := postagetesting.MustNewBatch()
 
 	t.Run("expect get error", func(t *testing.T) {
 		store := mock.New()
@@ -170,7 +168,7 @@ func TestBatchServiceUpdateDepth(t *testing.T) {
 }
 
 func TestBatchServiceUpdatePrice(t *testing.T) {
-	tChainState := postagetesting.NewChainState()
+	tChainState := postagetesting.MustNewChainState()
 	tChainState.Price = big.NewInt(100000)
 	tNewPrice := big.NewInt(20000000)
 
@@ -216,17 +214,6 @@ func newTestBatchService(t *testing.T, store postage.BatchStorer) postage.EventU
 	return svc
 }
 
-func newTestBatch(t *testing.T) *postage.Batch {
-	t.Helper()
-
-	b, err := postagetesting.NewBatch()
-	if err != nil {
-		t.Fatal("creating test batch")
-	}
-
-	return b
-}
-
 func putBatch(t *testing.T, store postage.BatchStorer, b *postage.Batch) {
 	t.Helper()
 
@@ -241,28 +228,4 @@ func putChainState(t *testing.T, store postage.BatchStorer, cs *postage.ChainSta
 	if err := store.PutChainState(cs); err != nil {
 		t.Fatalf("store put chain state: %v", err)
 	}
-}
-
-func getRandomID(t *testing.T) []byte {
-	t.Helper()
-
-	id := make([]byte, 32)
-	_, err := io.ReadFull(crand.Reader, id)
-	if err != nil {
-		t.Fatalf("get random id: %v", err)
-	}
-
-	return id
-}
-
-func getRandomOwner(t *testing.T) []byte {
-	t.Helper()
-
-	owner := make([]byte, 20)
-	_, err := io.ReadFull(crand.Reader, owner)
-	if err != nil {
-		t.Fatalf("get random owner: %v", owner)
-	}
-
-	return owner
 }

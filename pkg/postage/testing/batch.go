@@ -1,20 +1,51 @@
 package testing
 
 import (
+	"bytes"
 	crand "crypto/rand"
 	"io"
 	"math/big"
 	"math/rand"
+	"testing"
 
 	"github.com/ethersphere/bee/pkg/postage"
 )
 
+const defaultDepth = 16
+
 // BatchOption is an optional parameter for NewBatch
 type BatchOption func(c *postage.Batch)
 
-// NewBatch will create a new test batch. Fields that are not supplied will
-// be filled with random data
-func NewBatch(opts ...BatchOption) (*postage.Batch, error) {
+// MustNewID will generate a new random ID (32 byte slice). Panics on errors
+func MustNewID() []byte {
+	id := make([]byte, 32)
+	_, err := io.ReadFull(crand.Reader, id)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
+// MustNewAddress will generate a new random address (20 byte slice). Panics on
+// errors
+func MustNewAddress() []byte {
+	addr := make([]byte, 20)
+	_, err := io.ReadFull(crand.Reader, addr)
+	if err != nil {
+		panic(err)
+	}
+	return addr
+}
+
+// MustNewBigInt will generate a new random big int (uint64 base value). Panics
+// on errors
+func MustNewBigInt() *big.Int {
+	return (new(big.Int)).SetUint64(rand.Uint64())
+}
+
+// MustNewBatch will create a new test batch. Fields that are not supplied will
+// be filled with random data. Panics on errors
+func MustNewBatch(opts ...BatchOption) *postage.Batch {
 	var b postage.Batch
 
 	for _, opt := range opts {
@@ -22,39 +53,51 @@ func NewBatch(opts ...BatchOption) (*postage.Batch, error) {
 	}
 
 	if b.ID == nil {
-		id := make([]byte, 32)
-		_, err := io.ReadFull(crand.Reader, id)
-		if err != nil {
-			return nil, err
-		}
-		b.ID = id
+		b.ID = MustNewID()
 	}
 	if b.Value == nil {
-		b.Value = (new(big.Int)).SetUint64(rand.Uint64())
-
+		b.Value = MustNewBigInt()
 	}
 	if b.Value == nil {
 		b.Start = rand.Uint64()
 	}
 	if b.Owner == nil {
-		owner := make([]byte, 20)
-		_, err := io.ReadFull(crand.Reader, owner)
-		if err != nil {
-			return nil, err
-		}
-		b.Owner = owner
+		b.Owner = MustNewAddress()
 	}
 	if b.Depth == 0 {
-		b.Depth = 16
-
+		b.Depth = defaultDepth
 	}
 
-	return &b, nil
+	return &b
 }
 
 // WithOwner will set the batch owner
 func WithOwner(owner []byte) BatchOption {
 	return func(b *postage.Batch) {
 		b.Owner = owner
+	}
+}
+
+// CompareBatches is a testing helper that compares two batches and returns that
+// fails the test if they are not fully equal.
+//
+// Fails on first different value and prints the comparison.
+func CompareBatches(t *testing.T, want, got *postage.Batch) {
+	t.Helper()
+
+	if !bytes.Equal(want.ID, got.ID) {
+		t.Fatalf("batch ID: want %v, got %v", want.ID, got.ID)
+	}
+	if want.Value.Cmp(got.Value) != 0 {
+		t.Fatalf("value: want %v, got %v", want.Value, got.Value)
+	}
+	if want.Start != got.Start {
+		t.Fatalf("start: want %v, got %b", want.Start, got.Start)
+	}
+	if !bytes.Equal(want.Owner, got.Owner) {
+		t.Fatalf("owner: want %v, got %v", want.Owner, got.Owner)
+	}
+	if want.Depth != got.Depth {
+		t.Fatalf("depth: want %v, got %v", want.Depth, got.Depth)
 	}
 }

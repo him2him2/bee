@@ -5,7 +5,6 @@
 package batchstore_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/ethersphere/bee/pkg/postage"
@@ -17,14 +16,10 @@ import (
 func TestBatchStoreGet(t *testing.T) {
 	stateStore := mock.NewStateStore()
 
-	testBatch, err := postagetest.NewBatch()
-	if err != nil {
-		t.Fatalf("create test batch: %v", err)
-	}
+	testBatch := postagetest.MustNewBatch()
 	key := batchstore.BatchKey(testBatch.ID)
 
-	err = stateStore.Put(key, testBatch)
-	if err != nil {
+	if err := stateStore.Put(key, testBatch); err != nil {
 		t.Fatalf("store batch: %v", err)
 	}
 
@@ -35,38 +30,33 @@ func TestBatchStoreGet(t *testing.T) {
 		t.Fatalf("get batch: %v", err)
 	}
 
-	compareBatches(t, testBatch, got)
+	postagetest.CompareBatches(t, testBatch, got)
 }
 
 func TestBatchStorePut(t *testing.T) {
 	stateStore := mock.NewStateStore()
 	bStore := batchstore.New(stateStore)
 
-	testBatch, err := postagetest.NewBatch()
-	if err != nil {
-		t.Fatalf("create test batch: %v", err)
-	}
+	testBatch := postagetest.MustNewBatch()
 	key := batchstore.BatchKey(testBatch.ID)
 
-	err = bStore.Put(testBatch)
-	if err != nil {
+	if err := bStore.Put(testBatch); err != nil {
 		t.Fatalf("put batch: %v", err)
 	}
 
 	var got postage.Batch
-	err = stateStore.Get(key, &got)
-	if err != nil {
+	if err := stateStore.Get(key, &got); err != nil {
 		t.Fatalf("store get batch: %v", err)
 	}
 
-	compareBatches(t, testBatch, &got)
+	postagetest.CompareBatches(t, testBatch, &got)
 }
 
 func TestBatchStoreGetChainState(t *testing.T) {
 	stateStore := mock.NewStateStore()
 	bStore := batchstore.New(stateStore)
 
-	testState := postagetest.NewChainState()
+	testState := postagetest.MustNewChainState()
 
 	err := stateStore.Put(batchstore.StateKey, testState)
 	if err != nil {
@@ -78,14 +68,14 @@ func TestBatchStoreGetChainState(t *testing.T) {
 		t.Fatalf("get chain state: %v", err)
 	}
 
-	compareChainState(t, testState, got)
+	postagetest.CompareChainState(t, testState, got)
 }
 
 func TestBatchStorePutChainState(t *testing.T) {
 	stateStore := mock.NewStateStore()
 	bStore := batchstore.New(stateStore)
 
-	testState := postagetest.NewChainState()
+	testState := postagetest.MustNewChainState()
 
 	err := bStore.PutChainState(testState)
 	if err != nil {
@@ -98,39 +88,5 @@ func TestBatchStorePutChainState(t *testing.T) {
 		t.Fatalf("statestore get: %v", err)
 	}
 
-	compareChainState(t, testState, &got)
-}
-
-func compareBatches(t *testing.T, want, got *postage.Batch) {
-	t.Helper()
-
-	if !bytes.Equal(want.ID, got.ID) {
-		t.Fatalf("batch ID: want %v, got %v", want.ID, got.ID)
-	}
-	if want.Value.Cmp(got.Value) != 0 {
-		t.Fatalf("value: want %v, got %v", want.Value, got.Value)
-	}
-	if want.Start != got.Start {
-		t.Fatalf("start: want %v, got %b", want.Start, got.Start)
-	}
-	if !bytes.Equal(want.Owner, got.Owner) {
-		t.Fatalf("owner: want %v, got %v", want.Owner, got.Owner)
-	}
-	if want.Depth != got.Depth {
-		t.Fatalf("depth: want %v, got %v", want.Depth, got.Depth)
-	}
-}
-
-func compareChainState(t *testing.T, want, got *postage.ChainState) {
-	t.Helper()
-
-	if want.Block != got.Block {
-		t.Fatalf("block: want %v, got %v", want.Block, got.Block)
-	}
-	if want.Price.Cmp(got.Price) != 0 {
-		t.Fatalf("price: want %v, got %v", want.Price, got.Price)
-	}
-	if want.Total.Cmp(got.Total) != 0 {
-		t.Fatalf("total: want %v, got %v", want.Total, got.Total)
-	}
+	postagetest.CompareChainState(t, testState, &got)
 }

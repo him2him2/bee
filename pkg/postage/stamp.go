@@ -54,17 +54,17 @@ type Stamp struct {
 	sig     []byte // common r[32]s[32]v[1]-style 65 byte ECDSA signature
 }
 
-// MewStamp constructs a stamp
+// NewStamp constructs a stamp
 func NewStamp(batchID, sig []byte) *Stamp {
 	return &Stamp{batchID, sig}
 }
 
-// BatchID
+// BatchID returns the batch ID from a stamp
 func (s *Stamp) BatchID() []byte {
 	return s.batchID
 }
 
-// Sig
+// Sig returns the signature of the stamp
 func (s *Stamp) Sig() []byte {
 	return s.sig
 }

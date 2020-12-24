@@ -67,12 +67,10 @@ func TestStamperStamping(t *testing.T) {
 	// tests that Stamps returns with postage.ErrBucketFull iff
 	// issuer has the corresponding collision bucket filled]
 	t.Run("bucket full", func(t *testing.T) {
-		b, err := postagetesting.NewBatch(
+		b := postagetesting.MustNewBatch(
 			postagetesting.WithOwner(owner),
 		)
-		if err != nil {
-			t.Fatal(err)
-		}
+
 		st := postage.NewStampIssuer("", "", b.ID, b.Depth, 8)
 		stamper := postage.NewStamper(st, signer)
 		// issue 1 stamp

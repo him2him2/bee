@@ -15,7 +15,7 @@ import (
 // TestStampMarshalling tests the idempotence  of binary marshal/unmarshals for Stamps.
 func TestStampMarshalling(t *testing.T) {
 
-	sExp := postagetesting.NewStamp()
+	sExp := postagetesting.MustNewStamp()
 	buf, _ := sExp.MarshalBinary()
 	if len(buf) != postage.StampSize {
 		t.Fatalf("invalid length for serialised stamp. expected %d, got  %d", postage.StampSize, len(buf))
